@@ -67,18 +67,6 @@ Anything you write after `extends` takes precedence:
 - `base` enables `vcs.useIgnoreFile`, so Biome needs a `.gitignore` in your project root.
 - Paths in a shared config, such as `overrides[].includes`, are resolved from the project that extends it.
 
-## Releasing
-
-Releases are published to npm by [`release.yml`](.github/workflows/release.yml) using
-[trusted publishing](https://docs.npmjs.com/trusted-publishers) (no tokens).
-
-1. Bump `version` in `package.json` and commit it as `chore(release): x.y.z`.
-2. Publish a GitHub Release with the tag `vx.y.z`. The workflow checks that the tag matches `package.json`.
-3. Pre-releases (`v1.0.0-beta.1`) are published under the `next` dist-tag, stable ones under `latest`.
-
-Stricter lint rules can break consumers' builds, so a preset change that adds rules is at least a minor
-release, and a major one if it is likely to fail existing projects.
-
 ## License
 
 [MIT](LICENSE)
