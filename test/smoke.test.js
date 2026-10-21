@@ -124,6 +124,15 @@ describe('lib', () => {
     const { status, output } = check(dir)
     assert.equal(status, 0, output)
   })
+
+  it('does not flag console usage', () => {
+    const dir = consumer({
+      presets: ['base', 'lib'],
+      files: { 'src/a.ts': "export const log = () => console.log('x')\n" },
+    })
+    const { status, output } = check(dir)
+    assert.equal(status, 0, output)
+  })
 })
 
 describe('react', () => {

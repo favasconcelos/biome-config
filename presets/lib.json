@@ -1,7 +1,7 @@
 {
   "linter": {
     "rules": {
-      "suspicious": { "noExplicitAny": "error", "noConsole": "warn" },
+      "suspicious": { "noExplicitAny": "error" },
       "style": { "noDefaultExport": "error", "useNodejsImportProtocol": "error" },
       "performance": { "noReExportAll": "error" },
       "correctness": { "noUnusedImports": "error", "noUnusedVariables": "error" }
@@ -14,12 +14,7 @@
     },
     {
       "includes": ["**/*.test.*", "**/*.spec.*", "**/test/**", "**/tests/**", "**/__tests__/**"],
-      "linter": {
-        "rules": {
-          "suspicious": { "noConsole": "off" },
-          "style": { "noDefaultExport": "off" }
-        }
-      }
+      "linter": { "rules": { "style": { "noDefaultExport": "off" } } }
     }
   ]
 }
