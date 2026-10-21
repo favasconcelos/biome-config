@@ -1,0 +1,11 @@
+{
+  "javascript": {
+    "formatter": { "jsxQuoteStyle": "double" }
+  },
+  "linter": {
+    "domains": { "react": "recommended" },
+    "rules": {
+      "correctness": { "useExhaustiveDependencies": "error", "useHookAtTopLevel": "error" }
+    }
+  }
+}

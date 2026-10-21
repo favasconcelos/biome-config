@@ -1,0 +1,20 @@
+{
+  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+  "formatter": { "indentStyle": "space", "indentWidth": 2, "lineWidth": 100 },
+  "javascript": {
+    "formatter": { "quoteStyle": "single", "semicolons": "asNeeded", "trailingCommas": "all" }
+  },
+  "linter": { "enabled": true, "rules": { "preset": "recommended" } },
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
+  "overrides": [
+    {
+      "includes": ["**/*.test.*", "**/*.spec.*", "**/test/**", "**/tests/**", "**/__tests__/**"],
+      "linter": {
+        "rules": {
+          "suspicious": { "noExplicitAny": "off" },
+          "style": { "noNonNullAssertion": "off" }
+        }
+      }
+    }
+  ]
+}
