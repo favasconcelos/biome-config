@@ -1,6 +1,6 @@
 {
   "name": "@favasconcelos/biome-config",
-  "version": "1.0.0-beta.2",
+  "version": "1.0.0",
   "description": "Shared Biome configuration presets: base, lib and react",
   "keywords": [
     "biome",
