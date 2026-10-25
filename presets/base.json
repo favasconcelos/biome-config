@@ -4,7 +4,20 @@
   "javascript": {
     "formatter": { "quoteStyle": "single", "semicolons": "asNeeded", "trailingCommas": "all" }
   },
-  "linter": { "enabled": true, "rules": { "preset": "recommended" } },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "suspicious": { "noExplicitAny": "error", "useDefaultSwitchClauseLast": "error" },
+      "style": {
+        "useBlockStatements": "error",
+        "useDefaultParameterLast": "error",
+        "useNamingConvention": "error",
+        "useNodejsImportProtocol": "error"
+      },
+      "correctness": { "noUnusedImports": "error", "noUnusedVariables": "error" }
+    }
+  },
   "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "overrides": [
     {

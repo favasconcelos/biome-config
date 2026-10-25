@@ -13,7 +13,9 @@ const PRESETS = ['base', 'lib', 'react']
 
 const tmpDirs = []
 after(() => {
-  for (const dir of tmpDirs) rmSync(dir, { recursive: true, force: true })
+  for (const dir of tmpDirs) {
+    rmSync(dir, { recursive: true, force: true })
+  }
 })
 
 // Builds a throwaway project that consumes this package from node_modules, like a real consumer.
@@ -100,6 +102,78 @@ describe('base', () => {
     const { output } = check(dir)
     assert.match(output, /src\/a\.ts/)
     assert.doesNotMatch(output, /test\/a\.test\.ts/)
+  })
+
+  it('flags explicit any without the lib preset', () => {
+    const dir = consumer({ presets: ['base'], files: { 'src/a.ts': 'export const a: any = 1\n' } })
+    const { status, output } = check(dir)
+    assert.notEqual(status, 0)
+    assert.match(output, /noExplicitAny/)
+  })
+
+  it('requires the node: protocol without the lib preset', () => {
+    const dir = consumer({
+      presets: ['base'],
+      files: { 'src/a.ts': "import fs from 'fs'\nexport const sep = fs.sep\n" },
+    })
+    const { status, output } = check(dir)
+    assert.notEqual(status, 0)
+    assert.match(output, /useNodejsImportProtocol/)
+  })
+
+  it('flags unused imports and variables without the lib preset', () => {
+    const dir = consumer({
+      presets: ['base'],
+      files: {
+        'src/b.ts': 'export const b = 1\n',
+        'src/a.ts':
+          "import { b } from './b'\nexport function f() {\n  const unusedVar = 1\n  return 2\n}\n",
+      },
+    })
+    const { status, output } = check(dir)
+    assert.notEqual(status, 0)
+    assert.match(output, /noUnusedImports/)
+    assert.match(output, /noUnusedVariables/)
+  })
+
+  it('requires curly braces (curly: all)', () => {
+    const dir = consumer({
+      presets: ['base'],
+      files: { 'src/a.ts': 'export function f(x: boolean) {\n  if (x) return 1\n  return 2\n}\n' },
+    })
+    const { status, output } = check(dir)
+    assert.notEqual(status, 0)
+    assert.match(output, /useBlockStatements/)
+  })
+
+  it('requires default parameters last', () => {
+    const dir = consumer({
+      presets: ['base'],
+      files: { 'src/a.ts': 'export function f(a = 0, b: number) {\n  return [a, b]\n}\n' },
+    })
+    const { status, output } = check(dir)
+    assert.notEqual(status, 0)
+    assert.match(output, /useDefaultParameterLast/)
+  })
+
+  it('requires the default switch clause last', () => {
+    const dir = consumer({
+      presets: ['base'],
+      files: {
+        'src/a.ts':
+          'export function f(x: number) {\n  switch (x) {\n    default:\n      break\n    case 0:\n      break\n  }\n}\n',
+      },
+    })
+    const { status, output } = check(dir)
+    assert.notEqual(status, 0)
+    assert.match(output, /useDefaultSwitchClauseLast/)
+  })
+
+  it('enforces camelcase naming', () => {
+    const dir = consumer({ presets: ['base'], files: { 'src/a.ts': 'export const my_var = 1\n' } })
+    const { status, output } = check(dir)
+    assert.notEqual(status, 0)
+    assert.match(output, /useNamingConvention/)
   })
 })
 

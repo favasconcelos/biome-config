@@ -43,9 +43,11 @@ don't chain each other and you stack them yourself.
 
 | Preset | Use it for | What it adds |
 |---|---|---|
-| `base` | Every project | 2 spaces, 100 columns, single quotes, no semicolons, trailing commas, recommended lint rules, organized imports, `.gitignore` aware. Relaxes `noExplicitAny` and `noNonNullAssertion` in test files. |
-| `lib` | Published packages and CLIs | Errors on `any`, default exports, `export *`, unused imports and variables, and imports of Node built-ins without `node:`. Config files (`*.config.*`) and test files are exempt from the default-export rule. |
+| `base` | Every project | 2 spaces, 100 columns, single quotes, no semicolons, trailing commas, recommended lint rules, organized imports, `.gitignore` aware. Errors on `any`, unused imports and variables, bare (non-`node:`) built-in imports, missing curly braces (`useBlockStatements`), default parameters that aren't last, non-last `default` switch clauses, and non-camelCase names (`useNamingConvention`). Relaxes `noExplicitAny` and `noNonNullAssertion` in test files. |
+| `lib` | Published packages and CLIs | Errors on default exports and `export *`. Config files (`*.config.*`) and test files are exempt from the default-export rule. |
 | `react` | React apps and component libraries | Enables the Biome React domain, sets hook rules (`useExhaustiveDependencies`, `useHookAtTopLevel`) to errors, and uses double quotes in JSX. |
+
+> ESLint's `func-names: always` and `arrow-body-style: always` have no Biome equivalent, so they are intentionally not mapped.
 
 ## Overriding
 
