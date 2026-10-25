@@ -12,7 +12,7 @@ Shared [Biome](https://biomejs.dev) configuration, split into small presets you 
 npm install --save-dev --save-exact @biomejs/biome @favasconcelos/biome-config
 ```
 
-Requires Biome 2.5+.
+Requires Biome 2.5+. The `tailwind` preset requires Biome 2.6+.
 
 ## Usage
 
@@ -36,16 +36,21 @@ anything in your own `biome.json` wins over all of them. Always list `base` firs
 { "extends": ["@favasconcelos/biome-config/base", "@favasconcelos/biome-config/react"] }
 ```
 
+```json
+{ "extends": ["@favasconcelos/biome-config/base", "@favasconcelos/biome-config/tailwind"] }
+```
+
 A shared config cannot extend another one: Biome silently ignores a nested `extends`. That is why presets
 don't chain each other and you stack them yourself.
 
 ## Presets
 
-| Preset | Use it for |
-|---|---|
-| `base` | Every project: house formatter, strict lint rules, sorted imports, `.gitignore` aware. |
-| `lib` | Published packages and CLIs: named exports only, no `export *` barrels. |
-| `react` | React apps and component libraries: React domain rules, double quotes in JSX. |
+| Preset     | Use it for                                                                             |
+| ---------- | -------------------------------------------------------------------------------------- |
+| `base`     | Every project: house formatter, strict lint rules, sorted imports, `.gitignore` aware. |
+| `lib`      | Published packages and CLIs: named exports only, no `export *` barrels.                |
+| `react`    | React apps and component libraries: React domain rules, double quotes in JSX.          |
+| `tailwind` | Tailwind projects: v4 directive parsing, no legacy utilities. Requires Biome 2.6+.     |
 
 Full list of every rule and setting: [docs/rules.md](docs/rules.md).
 

@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const biomeBin = join(root, 'node_modules', '.bin', 'biome');
 const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
-const PRESETS = ['base', 'lib', 'react'];
+const PRESETS = ['base', 'lib', 'react', 'tailwind'];
 
 const tmpDirs = [];
 after(() => {
@@ -59,7 +59,7 @@ describe('package', () => {
     assert.equal(result.status, 0, result.stderr);
     const [{ files }] = JSON.parse(result.stdout);
     const paths = files.map((f) => f.path).sort();
-    assert.deepEqual(paths, ['LICENSE', 'README.md', 'package.json', 'presets/base.json', 'presets/lib.json', 'presets/react.json']);
+    assert.deepEqual(paths, ['LICENSE', 'README.md', 'package.json', 'presets/base.json', 'presets/lib.json', 'presets/react.json', 'presets/tailwind.json']);
   });
 });
 
@@ -250,5 +250,44 @@ describe('react', () => {
     const dir = consumer({ presets: ['base'], files: { 'src/comp.tsx': component } });
     const { output } = check(dir);
     assert.doesNotMatch(output, /useExhaustiveDependencies/);
+  });
+});
+
+describe('tailwind', () => {
+  const legacy = 'export function A() {\n  return <div className="flex-grow">x</div>;\n}\n';
+  const modern = 'export function A() {\n  return <div className="grow">x</div>;\n}\n';
+
+  it('flags legacy utilities, with a safe fix', () => {
+    const dir = consumer({
+      presets: ['base', 'tailwind'],
+      files: { 'src/a.tsx': legacy },
+    });
+    const { status, output } = check(dir);
+    assert.notEqual(status, 0);
+    assert.match(output, /noTailwindLegacyUtilities/);
+  });
+
+  it('accepts current utilities', () => {
+    const dir = consumer({
+      presets: ['base', 'tailwind'],
+      files: { 'src/a.tsx': modern },
+    });
+    const { status, output } = check(dir);
+    assert.equal(status, 0, output);
+  });
+
+  it('parses Tailwind v4 directives in CSS', () => {
+    const dir = consumer({
+      presets: ['base', 'tailwind'],
+      files: { 'src/theme.css': '@theme {\n  --color-brand: #ff0000;\n}\n' },
+    });
+    const { status, output } = check(dir);
+    assert.equal(status, 0, output);
+  });
+
+  it('is not applied by base alone', () => {
+    const dir = consumer({ presets: ['base'], files: { 'src/a.tsx': legacy } });
+    const { output } = check(dir);
+    assert.doesNotMatch(output, /noTailwindLegacyUtilities/);
   });
 });

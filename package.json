@@ -25,6 +25,7 @@
     "./base": "./presets/base.json",
     "./lib": "./presets/lib.json",
     "./react": "./presets/react.json",
+    "./tailwind": "./presets/tailwind.json",
     "./package.json": "./package.json"
   },
   "files": [
@@ -45,7 +46,7 @@
     "@biomejs/biome": ">=2.5.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.15"
+    "@biomejs/biome": "2.6.2"
   },
   "packageManager": "npm@11.19.0"
 }
