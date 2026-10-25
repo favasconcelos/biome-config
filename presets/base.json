@@ -13,6 +13,7 @@
       "style": {
         "useBlockStatements": "error",
         "useDefaultParameterLast": "error",
+        "useImportType": "error",
         "useNamingConvention": "error",
         "useNodejsImportProtocol": "error"
       },

@@ -175,6 +175,33 @@ describe('base', () => {
     assert.notEqual(status, 0)
     assert.match(output, /useNamingConvention/)
   })
+
+  it('sorts imports (organizeImports)', () => {
+    const dir = consumer({
+      presets: ['base'],
+      files: {
+        'src/b.ts': 'export const b = 1\n',
+        'src/a.ts': 'export const a = 2\n',
+        'src/main.ts': "import { b } from './b'\nimport { a } from './a'\nexport const x = a + b\n",
+      },
+    })
+    const { status, output } = check(dir)
+    assert.notEqual(status, 0)
+    assert.match(output, /organizeImports/)
+  })
+
+  it('requires import type for type-only imports', () => {
+    const dir = consumer({
+      presets: ['base'],
+      files: {
+        'src/types.ts': 'export type Foo = number\n',
+        'src/a.ts': "import { Foo } from './types'\nexport const x: Foo = 1\n",
+      },
+    })
+    const { status, output } = check(dir)
+    assert.notEqual(status, 0)
+    assert.match(output, /useImportType/)
+  })
 })
 
 describe('lib', () => {
