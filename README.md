@@ -43,7 +43,7 @@ don't chain each other and you stack them yourself.
 
 | Preset | Use it for | What it adds |
 |---|---|---|
-| `base` | Every project | 2 spaces, 100 columns, single quotes, no semicolons, trailing commas, recommended lint rules, organized imports, `.gitignore` aware. Relaxes `noExplicitAny` and `noNonNullAssertion` in test files. |
+| `base` | Every project | 2 spaces, 100 columns, single quotes, no semicolons, trailing commas, recommended lint rules, organized imports (Node and packages, then aliases, then relative paths), sorted object keys, JSX attributes and CSS properties (`package.json` and `package-lock.json` keys are left as-is), `.gitignore` aware. Relaxes `noExplicitAny` and `noNonNullAssertion` in test files. |
 | `lib` | Published packages and CLIs | Errors on `any`, default exports, `export *`, unused imports and variables, and imports of Node built-ins without `node:`. Config files (`*.config.*`) and test files are exempt from the default-export rule. |
 | `react` | React apps and component libraries | Enables the Biome React domain, sets hook rules (`useExhaustiveDependencies`, `useHookAtTopLevel`) to errors, and uses double quotes in JSX. |
 

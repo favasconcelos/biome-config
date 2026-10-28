@@ -13,7 +13,7 @@ const PRESETS = ['base', 'lib', 'react']
 
 const tmpDirs = []
 after(() => {
-  for (const dir of tmpDirs) rmSync(dir, { recursive: true, force: true })
+  for (const dir of tmpDirs) rmSync(dir, { force: true, recursive: true })
 })
 
 // Builds a throwaway project that consumes this package from node_modules, like a real consumer.
@@ -32,7 +32,7 @@ function consumer({ presets, files }) {
     mkdirSync(dirname(join(dir, name)), { recursive: true })
     writeFileSync(join(dir, name), content)
   }
-  return { path: dir, files }
+  return { files, path: dir }
 }
 
 function check(dir) {
@@ -41,7 +41,7 @@ function check(dir) {
     cwd: dir.path,
     encoding: 'utf8',
   })
-  return { status: result.status, output: `${result.stdout}\n${result.stderr}` }
+  return { output: `${result.stdout}\n${result.stderr}`, status: result.status }
 }
 
 describe('package', () => {
@@ -76,15 +76,15 @@ describe('base', () => {
   const clean = "import { b } from './b'\n\nexport const a = b('x')\n"
 
   it('accepts code in the house style', () => {
-    const dir = consumer({ presets: ['base'], files: { 'src/a.ts': clean } })
+    const dir = consumer({ files: { 'src/a.ts': clean }, presets: ['base'] })
     const { status, output } = check(dir)
     assert.equal(status, 0, output)
   })
 
   it('rejects double quotes and semicolons', () => {
     const dir = consumer({
-      presets: ['base'],
       files: { 'src/a.ts': 'import { b } from "./b";\n\nexport const a = b("x");\n' },
+      presets: ['base'],
     })
     const { status, output } = check(dir)
     assert.notEqual(status, 0)
@@ -94,23 +94,34 @@ describe('base', () => {
   it('relaxes noExplicitAny in test files only', () => {
     const source = 'export const a = (x: any) => x\n'
     const dir = consumer({
-      presets: ['base'],
       files: { 'src/a.ts': source, 'test/a.test.ts': source },
+      presets: ['base'],
     })
     const { output } = check(dir)
     assert.match(output, /src\/a\.ts/)
     assert.doesNotMatch(output, /test\/a\.test\.ts/)
+  })
+
+  it('sorts keys everywhere except package manifests', () => {
+    const unsorted = '{\n  "name": "a",\n  "version": "1.0.0",\n  "author": "b"\n}\n'
+    const dir = consumer({
+      files: { 'config.json': unsorted, 'package-lock.json': unsorted, 'package.json': unsorted },
+      presets: ['base'],
+    })
+    const { output } = check(dir)
+    assert.match(output, /config\.json/)
+    assert.doesNotMatch(output, /package(-lock)?\.json/)
   })
 })
 
 describe('lib', () => {
   it('forbids default exports, except in config files', () => {
     const dir = consumer({
-      presets: ['base', 'lib'],
       files: {
         'src/a.ts': 'export default 1\n',
         'tsup.config.ts': 'export default {}\n',
       },
+      presets: ['base', 'lib'],
     })
     const { status, output } = check(dir)
     assert.notEqual(status, 0)
@@ -120,15 +131,15 @@ describe('lib', () => {
   })
 
   it('is not applied by base alone', () => {
-    const dir = consumer({ presets: ['base'], files: { 'src/a.ts': 'export default 1\n' } })
+    const dir = consumer({ files: { 'src/a.ts': 'export default 1\n' }, presets: ['base'] })
     const { status, output } = check(dir)
     assert.equal(status, 0, output)
   })
 
   it('does not flag console usage', () => {
     const dir = consumer({
-      presets: ['base', 'lib'],
       files: { 'src/a.ts': "export const log = () => console.log('x')\n" },
+      presets: ['base', 'lib'],
     })
     const { status, output } = check(dir)
     assert.equal(status, 0, output)
@@ -150,8 +161,8 @@ describe('react', () => {
 
   it('enables the React domain rules', () => {
     const dir = consumer({
-      presets: ['base', 'react'],
       files: { 'src/comp.tsx': component },
+      presets: ['base', 'react'],
     })
     const { status, output } = check(dir)
     assert.notEqual(status, 0)
@@ -159,7 +170,7 @@ describe('react', () => {
   })
 
   it('is not applied by base alone', () => {
-    const dir = consumer({ presets: ['base'], files: { 'src/comp.tsx': component } })
+    const dir = consumer({ files: { 'src/comp.tsx': component }, presets: ['base'] })
     const { output } = check(dir)
     assert.doesNotMatch(output, /useExhaustiveDependencies/)
   })

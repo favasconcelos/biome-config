@@ -1,10 +1,10 @@
 {
   "linter": {
     "rules": {
-      "suspicious": { "noExplicitAny": "error" },
-      "style": { "noDefaultExport": "error", "useNodejsImportProtocol": "error" },
+      "correctness": { "noUnusedImports": "error", "noUnusedVariables": "error" },
       "performance": { "noReExportAll": "error" },
-      "correctness": { "noUnusedImports": "error", "noUnusedVariables": "error" }
+      "style": { "noDefaultExport": "error", "useNodejsImportProtocol": "error" },
+      "suspicious": { "noExplicitAny": "error" }
     }
   },
   "overrides": [
