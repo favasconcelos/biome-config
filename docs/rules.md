@@ -6,9 +6,10 @@ Every setting each preset enables, and why. All lint rules below are set to `err
 
 ### Formatter
 
-- 2 spaces, 200 columns.
+- 2 spaces, 180 columns.
 - JavaScript: single quotes, semicolons always, trailing commas everywhere, arrow parentheses
   always (`() =>`), `{ a: 1 }` bracket spacing, JSX brackets on their own line.
+- JSON: 2 spaces, `{ a: 1 }` bracket spacing, no trailing commas.
 
 ### Linter (on top of Biome's `recommended` preset)
 
@@ -27,10 +28,15 @@ Every setting each preset enables, and why. All lint rules below are set to `err
 ### Assist
 
 - `source.organizeImports`: sorts, merges, and de-duplicates imports (runs as part of
-  `biome check`).
+  `biome check`). Groups, separated by a blank line: Node built-ins and packages, then aliases,
+  then relative paths.
+- `source.useSortedKeys`: sorts object keys (JS and JSON).
+- `source.useSortedAttributes`: sorts JSX attributes.
+- `source.useSortedProperties`: sorts CSS properties.
 
 ### Overrides
 
+- `package.json` and `package-lock.json`: `useSortedKeys` is off, so npm's own key order is kept.
 - Test files (`*.test.*`, `*.spec.*`, `test/`, `tests/`, `__tests__/`): `noExplicitAny` and
   `noNonNullAssertion` are off — tests are allowed looser typing.
 

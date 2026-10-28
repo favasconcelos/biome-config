@@ -2,11 +2,11 @@
   "$schema": "../node_modules/@biomejs/biome/configuration_schema.json",
   "linter": {
     "rules": {
-      "style": {
-        "noDefaultExport": "error"
-      },
       "performance": {
         "noReExportAll": "error"
+      },
+      "style": {
+        "noDefaultExport": "error"
       }
     }
   },

@@ -14,7 +14,7 @@ const PRESETS = ['base', 'lib', 'react', 'tailwind'];
 const tmpDirs = [];
 after(() => {
   for (const dir of tmpDirs) {
-    rmSync(dir, { recursive: true, force: true });
+    rmSync(dir, { force: true, recursive: true });
   }
 });
 
@@ -24,13 +24,13 @@ function consumer({ presets, files }) {
   tmpDirs.push(dir);
   mkdirSync(join(dir, 'node_modules', '@favasconcelos'), { recursive: true });
   symlinkSync(root, join(dir, 'node_modules', '@favasconcelos', 'biome-config'), 'dir');
-  writeFileSync(join(dir, 'biome.json'), JSON.stringify({ extends: presets.map((p) => `@favasconcelos/biome-config/${p}`) }, null, 2) + '\n');
+  writeFileSync(join(dir, 'biome.json'), `${JSON.stringify({ extends: presets.map((p) => `@favasconcelos/biome-config/${p}`) }, null, 2)}\n`);
   writeFileSync(join(dir, '.gitignore'), 'node_modules\n');
   for (const [name, content] of Object.entries(files)) {
     mkdirSync(dirname(join(dir, name)), { recursive: true });
     writeFileSync(join(dir, name), content);
   }
-  return { path: dir, files };
+  return { files, path: dir };
 }
 
 function check(dir) {
@@ -39,7 +39,7 @@ function check(dir) {
     cwd: dir.path,
     encoding: 'utf8',
   });
-  return { status: result.status, output: `${result.stdout}\n${result.stderr}` };
+  return { output: `${result.stdout}\n${result.stderr}`, status: result.status };
 }
 
 describe('package', () => {
@@ -67,15 +67,15 @@ describe('base', () => {
   const clean = "import { b } from './b';\n\nexport const a = b('x');\n";
 
   it('accepts code in the house style', () => {
-    const dir = consumer({ presets: ['base'], files: { 'src/a.ts': clean } });
+    const dir = consumer({ files: { 'src/a.ts': clean }, presets: ['base'] });
     const { status, output } = check(dir);
     assert.equal(status, 0, output);
   });
 
   it('rejects double quotes', () => {
     const dir = consumer({
-      presets: ['base'],
       files: { 'src/a.ts': 'import { b } from "./b";\n\nexport const a = b("x");\n' },
+      presets: ['base'],
     });
     const { status, output } = check(dir);
     assert.notEqual(status, 0);
@@ -85,16 +85,27 @@ describe('base', () => {
   it('relaxes noExplicitAny in test files only', () => {
     const source = 'export const a = (x: any) => x;\n';
     const dir = consumer({
-      presets: ['base'],
       files: { 'src/a.ts': source, 'test/a.test.ts': source },
+      presets: ['base'],
     });
     const { output } = check(dir);
     assert.match(output, /src\/a\.ts/);
     assert.doesNotMatch(output, /test\/a\.test\.ts/);
   });
 
+  it('sorts keys everywhere except package manifests', () => {
+    const unsorted = '{\n  "name": "a",\n  "version": "1.0.0",\n  "author": "b"\n}\n';
+    const dir = consumer({
+      files: { 'config.json': unsorted, 'package-lock.json': unsorted, 'package.json': unsorted },
+      presets: ['base'],
+    });
+    const { output } = check(dir);
+    assert.match(output, /config\.json/);
+    assert.doesNotMatch(output, /package(-lock)?\.json/);
+  });
+
   it('flags explicit any without the lib preset', () => {
-    const dir = consumer({ presets: ['base'], files: { 'src/a.ts': 'export const a: any = 1;\n' } });
+    const dir = consumer({ files: { 'src/a.ts': 'export const a: any = 1;\n' }, presets: ['base'] });
     const { status, output } = check(dir);
     assert.notEqual(status, 0);
     assert.match(output, /noExplicitAny/);
@@ -102,8 +113,8 @@ describe('base', () => {
 
   it('requires the node: protocol without the lib preset', () => {
     const dir = consumer({
-      presets: ['base'],
       files: { 'src/a.ts': "import fs from 'fs';\nexport const sep = fs.sep;\n" },
+      presets: ['base'],
     });
     const { status, output } = check(dir);
     assert.notEqual(status, 0);
@@ -112,11 +123,11 @@ describe('base', () => {
 
   it('flags unused imports and variables without the lib preset', () => {
     const dir = consumer({
-      presets: ['base'],
       files: {
-        'src/b.ts': 'export const b = 1;\n',
         'src/a.ts': "import { b } from './b';\nexport function f() {\n  const unusedVar = 1;\n  return 2;\n}\n",
+        'src/b.ts': 'export const b = 1;\n',
       },
+      presets: ['base'],
     });
     const { status, output } = check(dir);
     assert.notEqual(status, 0);
@@ -126,8 +137,8 @@ describe('base', () => {
 
   it('requires curly braces (curly: all)', () => {
     const dir = consumer({
-      presets: ['base'],
       files: { 'src/a.ts': 'export function f(x: boolean) {\n  if (x) return 1;\n  return 2;\n}\n' },
+      presets: ['base'],
     });
     const { status, output } = check(dir);
     assert.notEqual(status, 0);
@@ -136,8 +147,8 @@ describe('base', () => {
 
   it('requires default parameters last', () => {
     const dir = consumer({
-      presets: ['base'],
       files: { 'src/a.ts': 'export function f(a = 0, b: number) {\n  return [a, b];\n}\n' },
+      presets: ['base'],
     });
     const { status, output } = check(dir);
     assert.notEqual(status, 0);
@@ -146,10 +157,10 @@ describe('base', () => {
 
   it('requires the default switch clause last', () => {
     const dir = consumer({
-      presets: ['base'],
       files: {
         'src/a.ts': 'export function f(x: number) {\n  switch (x) {\n    default:\n      break;\n    case 0:\n      break;\n  }\n}\n',
       },
+      presets: ['base'],
     });
     const { status, output } = check(dir);
     assert.notEqual(status, 0);
@@ -157,7 +168,7 @@ describe('base', () => {
   });
 
   it('enforces camelcase naming', () => {
-    const dir = consumer({ presets: ['base'], files: { 'src/a.ts': 'export const my_var = 1;\n' } });
+    const dir = consumer({ files: { 'src/a.ts': 'export const my_var = 1;\n' }, presets: ['base'] });
     const { status, output } = check(dir);
     assert.notEqual(status, 0);
     assert.match(output, /useNamingConvention/);
@@ -165,12 +176,12 @@ describe('base', () => {
 
   it('sorts imports (organizeImports)', () => {
     const dir = consumer({
-      presets: ['base'],
       files: {
-        'src/b.ts': 'export const b = 1;\n',
         'src/a.ts': 'export const a = 2;\n',
+        'src/b.ts': 'export const b = 1;\n',
         'src/main.ts': "import { b } from './b';\nimport { a } from './a';\nexport const x = a + b;\n",
       },
+      presets: ['base'],
     });
     const { status, output } = check(dir);
     assert.notEqual(status, 0);
@@ -179,11 +190,11 @@ describe('base', () => {
 
   it('requires import type for type-only imports', () => {
     const dir = consumer({
-      presets: ['base'],
       files: {
-        'src/types.ts': 'export type Foo = number;\n',
         'src/a.ts': "import { Foo } from './types';\nexport const x: Foo = 1;\n",
+        'src/types.ts': 'export type Foo = number;\n',
       },
+      presets: ['base'],
     });
     const { status, output } = check(dir);
     assert.notEqual(status, 0);
@@ -194,11 +205,11 @@ describe('base', () => {
 describe('lib', () => {
   it('forbids default exports, except in config files', () => {
     const dir = consumer({
-      presets: ['base', 'lib'],
       files: {
         'src/a.ts': 'export default 1;\n',
         'tsup.config.ts': 'export default {};\n',
       },
+      presets: ['base', 'lib'],
     });
     const { status, output } = check(dir);
     assert.notEqual(status, 0);
@@ -208,15 +219,15 @@ describe('lib', () => {
   });
 
   it('is not applied by base alone', () => {
-    const dir = consumer({ presets: ['base'], files: { 'src/a.ts': 'export default 1;\n' } });
+    const dir = consumer({ files: { 'src/a.ts': 'export default 1;\n' }, presets: ['base'] });
     const { status, output } = check(dir);
     assert.equal(status, 0, output);
   });
 
   it('does not flag console usage', () => {
     const dir = consumer({
-      presets: ['base', 'lib'],
       files: { 'src/a.ts': "export const log = () => console.log('x');\n" },
+      presets: ['base', 'lib'],
     });
     const { status, output } = check(dir);
     assert.equal(status, 0, output);
@@ -238,8 +249,8 @@ describe('react', () => {
 
   it('enables the React domain rules', () => {
     const dir = consumer({
-      presets: ['base', 'react'],
       files: { 'src/comp.tsx': component },
+      presets: ['base', 'react'],
     });
     const { status, output } = check(dir);
     assert.notEqual(status, 0);
@@ -247,7 +258,7 @@ describe('react', () => {
   });
 
   it('is not applied by base alone', () => {
-    const dir = consumer({ presets: ['base'], files: { 'src/comp.tsx': component } });
+    const dir = consumer({ files: { 'src/comp.tsx': component }, presets: ['base'] });
     const { output } = check(dir);
     assert.doesNotMatch(output, /useExhaustiveDependencies/);
   });
@@ -259,8 +270,8 @@ describe('tailwind', () => {
 
   it('flags legacy utilities, with a safe fix', () => {
     const dir = consumer({
-      presets: ['base', 'tailwind'],
       files: { 'src/a.tsx': legacy },
+      presets: ['base', 'tailwind'],
     });
     const { status, output } = check(dir);
     assert.notEqual(status, 0);
@@ -269,8 +280,8 @@ describe('tailwind', () => {
 
   it('accepts current utilities', () => {
     const dir = consumer({
-      presets: ['base', 'tailwind'],
       files: { 'src/a.tsx': modern },
+      presets: ['base', 'tailwind'],
     });
     const { status, output } = check(dir);
     assert.equal(status, 0, output);
@@ -278,15 +289,15 @@ describe('tailwind', () => {
 
   it('parses Tailwind v4 directives in CSS', () => {
     const dir = consumer({
-      presets: ['base', 'tailwind'],
       files: { 'src/theme.css': '@theme {\n  --color-brand: #ff0000;\n}\n' },
+      presets: ['base', 'tailwind'],
     });
     const { status, output } = check(dir);
     assert.equal(status, 0, output);
   });
 
   it('is not applied by base alone', () => {
-    const dir = consumer({ presets: ['base'], files: { 'src/a.tsx': legacy } });
+    const dir = consumer({ files: { 'src/a.tsx': legacy }, presets: ['base'] });
     const { output } = check(dir);
     assert.doesNotMatch(output, /noTailwindLegacyUtilities/);
   });
