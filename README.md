@@ -12,7 +12,7 @@ Shared [Biome](https://biomejs.dev) configuration, split into small presets you 
 npm install --save-dev --save-exact @biomejs/biome @favasconcelos/biome-config
 ```
 
-Requires Biome 2.5+.
+Requires Biome 2.5+. The `tailwind` preset requires Biome 2.6+.
 
 ## Usage
 
@@ -36,16 +36,23 @@ anything in your own `biome.json` wins over all of them. Always list `base` firs
 { "extends": ["@favasconcelos/biome-config/base", "@favasconcelos/biome-config/react"] }
 ```
 
+```json
+{ "extends": ["@favasconcelos/biome-config/base", "@favasconcelos/biome-config/tailwind"] }
+```
+
 A shared config cannot extend another one: Biome silently ignores a nested `extends`. That is why presets
 don't chain each other and you stack them yourself.
 
 ## Presets
 
-| Preset | Use it for | What it adds |
-|---|---|---|
-| `base` | Every project | 2 spaces, 180 columns, single quotes, semicolons, trailing commas (none in JSON), recommended lint rules, organized imports (Node and packages, then aliases, then relative paths), sorted object keys, JSX attributes and CSS properties (`package.json` and `package-lock.json` keys are left as-is), `.gitignore` aware. Relaxes `noExplicitAny` and `noNonNullAssertion` in test files. |
-| `lib` | Published packages and CLIs | Errors on `any`, default exports, `export *`, unused imports and variables, and imports of Node built-ins without `node:`. Config files (`*.config.*`) and test files are exempt from the default-export rule. |
-| `react` | React apps and component libraries | Enables the Biome React domain, sets hook rules (`useExhaustiveDependencies`, `useHookAtTopLevel`) to errors, and uses double quotes in JSX. |
+| Preset     | Use it for                                                                             |
+| ---------- | -------------------------------------------------------------------------------------- |
+| `base`     | Every project: house formatter, strict lint rules, sorted imports, `.gitignore` aware. |
+| `lib`      | Published packages and CLIs: named exports only, no `export *` barrels.                |
+| `react`    | React apps and component libraries: React domain rules, double quotes in JSX.          |
+| `tailwind` | Tailwind projects: v4 directive parsing, no legacy utilities. Requires Biome 2.6+.     |
+
+Full list of every rule and setting: [docs/rules.md](docs/rules.md).
 
 ## Overriding
 

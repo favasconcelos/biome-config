@@ -1,20 +1,35 @@
 {
+  "$schema": "../node_modules/@biomejs/biome/configuration_schema.json",
   "linter": {
     "rules": {
-      "correctness": { "noUnusedImports": "error", "noUnusedVariables": "error" },
-      "performance": { "noReExportAll": "error" },
-      "style": { "noDefaultExport": "error", "useNodejsImportProtocol": "error" },
-      "suspicious": { "noExplicitAny": "error" }
+      "performance": {
+        "noReExportAll": "error"
+      },
+      "style": {
+        "noDefaultExport": "error"
+      }
     }
   },
   "overrides": [
     {
       "includes": ["**/*.config.*", "**/*.d.ts"],
-      "linter": { "rules": { "style": { "noDefaultExport": "off" } } }
+      "linter": {
+        "rules": {
+          "style": {
+            "noDefaultExport": "off"
+          }
+        }
+      }
     },
     {
       "includes": ["**/*.test.*", "**/*.spec.*", "**/test/**", "**/tests/**", "**/__tests__/**"],
-      "linter": { "rules": { "style": { "noDefaultExport": "off" } } }
+      "linter": {
+        "rules": {
+          "style": {
+            "noDefaultExport": "off"
+          }
+        }
+      }
     }
   ]
 }

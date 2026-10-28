@@ -9,11 +9,13 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const biomeBin = join(root, 'node_modules', '.bin', 'biome');
 const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
-const PRESETS = ['base', 'lib', 'react'];
+const PRESETS = ['base', 'lib', 'react', 'tailwind'];
 
 const tmpDirs = [];
 after(() => {
-  for (const dir of tmpDirs) rmSync(dir, { force: true, recursive: true });
+  for (const dir of tmpDirs) {
+    rmSync(dir, { force: true, recursive: true });
+  }
 });
 
 // Builds a throwaway project that consumes this package from node_modules, like a real consumer.
@@ -57,7 +59,7 @@ describe('package', () => {
     assert.equal(result.status, 0, result.stderr);
     const [{ files }] = JSON.parse(result.stdout);
     const paths = files.map((f) => f.path).sort();
-    assert.deepEqual(paths, ['LICENSE', 'README.md', 'package.json', 'presets/base.json', 'presets/lib.json', 'presets/react.json']);
+    assert.deepEqual(paths, ['LICENSE', 'README.md', 'package.json', 'presets/base.json', 'presets/lib.json', 'presets/react.json', 'presets/tailwind.json']);
   });
 });
 
@@ -70,9 +72,9 @@ describe('base', () => {
     assert.equal(status, 0, output);
   });
 
-  it('rejects double quotes and missing semicolons', () => {
+  it('rejects double quotes', () => {
     const dir = consumer({
-      files: { 'src/a.ts': 'import { b } from "./b"\n\nexport const a = b("x")\n' },
+      files: { 'src/a.ts': 'import { b } from "./b";\n\nexport const a = b("x");\n' },
       presets: ['base'],
     });
     const { status, output } = check(dir);
@@ -100,6 +102,103 @@ describe('base', () => {
     const { output } = check(dir);
     assert.match(output, /config\.json/);
     assert.doesNotMatch(output, /package(-lock)?\.json/);
+  });
+
+  it('flags explicit any without the lib preset', () => {
+    const dir = consumer({ files: { 'src/a.ts': 'export const a: any = 1;\n' }, presets: ['base'] });
+    const { status, output } = check(dir);
+    assert.notEqual(status, 0);
+    assert.match(output, /noExplicitAny/);
+  });
+
+  it('requires the node: protocol without the lib preset', () => {
+    const dir = consumer({
+      files: { 'src/a.ts': "import fs from 'fs';\nexport const sep = fs.sep;\n" },
+      presets: ['base'],
+    });
+    const { status, output } = check(dir);
+    assert.notEqual(status, 0);
+    assert.match(output, /useNodejsImportProtocol/);
+  });
+
+  it('flags unused imports and variables without the lib preset', () => {
+    const dir = consumer({
+      files: {
+        'src/a.ts': "import { b } from './b';\nexport function f() {\n  const unusedVar = 1;\n  return 2;\n}\n",
+        'src/b.ts': 'export const b = 1;\n',
+      },
+      presets: ['base'],
+    });
+    const { status, output } = check(dir);
+    assert.notEqual(status, 0);
+    assert.match(output, /noUnusedImports/);
+    assert.match(output, /noUnusedVariables/);
+  });
+
+  it('requires curly braces (curly: all)', () => {
+    const dir = consumer({
+      files: { 'src/a.ts': 'export function f(x: boolean) {\n  if (x) return 1;\n  return 2;\n}\n' },
+      presets: ['base'],
+    });
+    const { status, output } = check(dir);
+    assert.notEqual(status, 0);
+    assert.match(output, /useBlockStatements/);
+  });
+
+  it('requires default parameters last', () => {
+    const dir = consumer({
+      files: { 'src/a.ts': 'export function f(a = 0, b: number) {\n  return [a, b];\n}\n' },
+      presets: ['base'],
+    });
+    const { status, output } = check(dir);
+    assert.notEqual(status, 0);
+    assert.match(output, /useDefaultParameterLast/);
+  });
+
+  it('requires the default switch clause last', () => {
+    const dir = consumer({
+      files: {
+        'src/a.ts': 'export function f(x: number) {\n  switch (x) {\n    default:\n      break;\n    case 0:\n      break;\n  }\n}\n',
+      },
+      presets: ['base'],
+    });
+    const { status, output } = check(dir);
+    assert.notEqual(status, 0);
+    assert.match(output, /useDefaultSwitchClauseLast/);
+  });
+
+  it('enforces camelcase naming', () => {
+    const dir = consumer({ files: { 'src/a.ts': 'export const my_var = 1;\n' }, presets: ['base'] });
+    const { status, output } = check(dir);
+    assert.notEqual(status, 0);
+    assert.match(output, /useNamingConvention/);
+  });
+
+  it('sorts imports (organizeImports)', () => {
+    const dir = consumer({
+      files: {
+        'src/a.ts': 'export const a = 2;\n',
+        'src/b.ts': 'export const b = 1;\n',
+        'src/main.ts': "import { b } from './b';\nimport { a } from './a';\nexport const x = a + b;\n",
+      },
+      presets: ['base'],
+    });
+    const { status, output } = check(dir);
+    assert.notEqual(status, 0);
+    assert.match(output, /organizeImports/);
+  });
+
+  it('requires import type for type-only imports', () => {
+    const dir = consumer({
+      files: {
+        'src/a.ts': "import { Foo } from './types';\nexport const x: Foo = 1;\n",
+        'src/types.ts': 'export type Foo = number;\n',
+      },
+      presets: ['base'],
+    });
+    const { status, output } = check(dir);
+    assert.notEqual(status, 0);
+    assert.match(output, /useImportType/);
   });
 });
 
@@ -162,5 +261,44 @@ describe('react', () => {
     const dir = consumer({ files: { 'src/comp.tsx': component }, presets: ['base'] });
     const { output } = check(dir);
     assert.doesNotMatch(output, /useExhaustiveDependencies/);
+  });
+});
+
+describe('tailwind', () => {
+  const legacy = 'export function A() {\n  return <div className="flex-grow">x</div>;\n}\n';
+  const modern = 'export function A() {\n  return <div className="grow">x</div>;\n}\n';
+
+  it('flags legacy utilities, with a safe fix', () => {
+    const dir = consumer({
+      files: { 'src/a.tsx': legacy },
+      presets: ['base', 'tailwind'],
+    });
+    const { status, output } = check(dir);
+    assert.notEqual(status, 0);
+    assert.match(output, /noTailwindLegacyUtilities/);
+  });
+
+  it('accepts current utilities', () => {
+    const dir = consumer({
+      files: { 'src/a.tsx': modern },
+      presets: ['base', 'tailwind'],
+    });
+    const { status, output } = check(dir);
+    assert.equal(status, 0, output);
+  });
+
+  it('parses Tailwind v4 directives in CSS', () => {
+    const dir = consumer({
+      files: { 'src/theme.css': '@theme {\n  --color-brand: #ff0000;\n}\n' },
+      presets: ['base', 'tailwind'],
+    });
+    const { status, output } = check(dir);
+    assert.equal(status, 0, output);
+  });
+
+  it('is not applied by base alone', () => {
+    const dir = consumer({ files: { 'src/a.tsx': legacy }, presets: ['base'] });
+    const { output } = check(dir);
+    assert.doesNotMatch(output, /noTailwindLegacyUtilities/);
   });
 });

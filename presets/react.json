@@ -1,11 +1,19 @@
 {
+  "$schema": "../node_modules/@biomejs/biome/configuration_schema.json",
   "javascript": {
-    "formatter": { "jsxQuoteStyle": "double" }
+    "formatter": {
+      "jsxQuoteStyle": "double"
+    }
   },
   "linter": {
-    "domains": { "react": "recommended" },
+    "domains": {
+      "react": "recommended"
+    },
     "rules": {
-      "correctness": { "useExhaustiveDependencies": "error", "useHookAtTopLevel": "error" }
+      "correctness": {
+        "useExhaustiveDependencies": "error",
+        "useHookAtTopLevel": "error"
+      }
     }
   }
 }
